@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fieldIds } from "@/lib/clickup";
+import { fieldsByName } from "@/lib/clickup";
 
 type ClickUpField = { id: string; value?: string | number | null };
 type ClickUpTask = { id: string; name: string; custom_fields?: ClickUpField[] };
@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
   if (!sku) return NextResponse.json({ error: "SKU is required." }, { status: 400 });
   if (!token || !listId) return NextResponse.json({ error: "ClickUp is not configured." }, { status: 500 });
 
-  const ids = await fieldIds(token, listId, productFieldNames);
-  if (!ids) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
-  const { "SKU / Barcode": skuField, "Stok Saat Ini": stockField, "Lokasi Rak": rackField, Brand: brandField } = ids;
-  const missingFields = productFieldNames.filter((name) => !ids[name]);
+  const fieldsByLabel = await fieldsByName(token, listId, productFieldNames);
+  if (!fieldsByLabel) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
+  const { "SKU / Barcode": skuField, "Stok Saat Ini": stockField, "Lokasi Rak": rackField, Brand: brandField } = fieldsByLabel;
+  const missingFields = productFieldNames.filter((name) => !fieldsByLabel[name]);
   if (!skuField || !stockField || !rackField || !brandField) {
     return NextResponse.json({ error: `Missing ClickUp fields: ${missingFields.join(", ")}.` }, { status: 500 });
   }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     });
     if (!response.ok) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
     const result = (await response.json()) as { tasks?: ClickUpTask[]; last_page?: boolean };
-    product = result.tasks?.find((task) => String(valueOf(task.custom_fields, skuField) ?? "") === sku);
+    product = result.tasks?.find((task) => String(valueOf(task.custom_fields, skuField.id) ?? "") === sku);
     if (result.last_page || !result.tasks?.length) break;
   }
   if (!product) return NextResponse.json({ error: "Product not found." }, { status: 404 });
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
     id: product.id,
     name: product.name,
     sku,
-    currentStock: Number(valueOf(fields, stockField) ?? 0),
-    rak: String(valueOf(fields, rackField) ?? "-"),
-    brand: String(valueOf(fields, brandField) ?? "-"),
+    currentStock: Number(valueOf(fields, stockField.id) ?? 0),
+    rak: String(valueOf(fields, rackField.id) ?? "-"),
+    brand: String(valueOf(fields, brandField.id) ?? "-"),
   });
 }
