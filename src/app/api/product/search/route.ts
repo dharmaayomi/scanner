@@ -3,6 +3,7 @@ import { fieldIds } from "@/lib/clickup";
 
 type ClickUpField = { id: string; value?: string | number | null };
 type ClickUpTask = { id: string; name: string; custom_fields?: ClickUpField[] };
+const productFieldNames = ["SKU / Barcode", "Stok Saat Ini", "Lokasi Rak", "Brand"] as const;
 
 const valueOf = (fields: ClickUpField[] | undefined, id: string) =>
   fields?.find((field) => field.id === id)?.value;
@@ -15,11 +16,12 @@ export async function GET(request: NextRequest) {
   if (!sku) return NextResponse.json({ error: "SKU is required." }, { status: 400 });
   if (!token || !listId) return NextResponse.json({ error: "ClickUp is not configured." }, { status: 500 });
 
-  const ids = await fieldIds(token, listId, ["SKU / Barcode", "Stok", "Rak", "Brand"]);
+  const ids = await fieldIds(token, listId, productFieldNames);
   if (!ids) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
-  const { "SKU / Barcode": skuField, Stok: stockField, Rak: rackField, Brand: brandField } = ids;
+  const { "SKU / Barcode": skuField, "Stok Saat Ini": stockField, "Lokasi Rak": rackField, Brand: brandField } = ids;
+  const missingFields = productFieldNames.filter((name) => !ids[name]);
   if (!skuField || !stockField || !rackField || !brandField) {
-    return NextResponse.json({ error: "Required product fields are missing in ClickUp." }, { status: 500 });
+    return NextResponse.json({ error: `Missing ClickUp fields: ${missingFields.join(", ")}.` }, { status: 500 });
   }
 
   let product: ClickUpTask | undefined;

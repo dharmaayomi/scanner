@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
   }
 
   const [masterFields, logFields] = await Promise.all([
-    fieldIds(token, masterListId, ["Stok"]),
+    fieldIds(token, masterListId, ["Stok Saat Ini"]),
     fieldIds(token, logListId, ["Tipe Transaksi", "Qty"]),
   ]);
   if (!masterFields || !logFields) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
-  const stockField = masterFields.Stok;
+  const stockField = masterFields["Stok Saat Ini"];
   const transactionTypeField = logFields["Tipe Transaksi"];
   const quantityField = logFields.Qty;
   if (!stockField || !transactionTypeField || !quantityField) {
