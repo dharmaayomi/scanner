@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fieldIds } from "@/lib/clickup";
 import { calculateStock, type TransactionType } from "@/lib/stock";
 
 type Payload = {
@@ -11,13 +12,25 @@ export async function POST(request: NextRequest) {
   const { taskId, sku, type, qty, operator, notes, currentStock } = body;
   const token = process.env.CLICKUP_API_TOKEN;
   const logListId = process.env.CLICKUP_LOG_LIST_ID;
-  const stockField = process.env.FIELD_ID_STOK;
+  const masterListId = process.env.CLICKUP_MASTER_LIST_ID;
 
   if (!taskId || !sku || !operator || !type || typeof qty !== "number" || !Number.isInteger(qty) || qty < 1 || typeof currentStock !== "number" || !Number.isFinite(currentStock)) {
     return NextResponse.json({ error: "Invalid transaction data." }, { status: 400 });
   }
-  if (!token || !logListId || !stockField || !process.env.FIELD_ID_TIPE || !process.env.FIELD_ID_QTY) {
+  if (!token || !logListId || !masterListId) {
     return NextResponse.json({ error: "ClickUp is not configured." }, { status: 500 });
+  }
+
+  const [masterFields, logFields] = await Promise.all([
+    fieldIds(token, masterListId, ["Stok"]),
+    fieldIds(token, logListId, ["Tipe Transaksi", "Qty"]),
+  ]);
+  if (!masterFields || !logFields) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
+  const stockField = masterFields.Stok;
+  const transactionTypeField = logFields["Tipe Transaksi"];
+  const quantityField = logFields.Qty;
+  if (!stockField || !transactionTypeField || !quantityField) {
+    return NextResponse.json({ error: "Required transaction fields are missing in ClickUp." }, { status: 500 });
   }
 
   const newStock = calculateStock(currentStock, type, qty);
@@ -31,8 +44,8 @@ export async function POST(request: NextRequest) {
         name: `${type} ${sku} × ${qty}`,
         description: `Operator: ${operator}${notes ? `\nNotes: ${notes}` : ""}`,
         custom_fields: [
-          { id: process.env.FIELD_ID_TIPE, value: type },
-          { id: process.env.FIELD_ID_QTY, value: qty },
+          { id: transactionTypeField, value: type },
+          { id: quantityField, value: qty },
         ],
       }),
     }),

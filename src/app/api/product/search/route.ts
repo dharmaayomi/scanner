@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fieldIds } from "@/lib/clickup";
 
 type ClickUpField = { id: string; value?: string | number | null };
 type ClickUpTask = { id: string; name: string; custom_fields?: ClickUpField[] };
@@ -10,10 +11,16 @@ export async function GET(request: NextRequest) {
   const sku = request.nextUrl.searchParams.get("sku")?.trim();
   const token = process.env.CLICKUP_API_TOKEN;
   const listId = process.env.CLICKUP_MASTER_LIST_ID;
-  const skuField = process.env.FIELD_ID_SKU;
 
   if (!sku) return NextResponse.json({ error: "SKU is required." }, { status: 400 });
-  if (!token || !listId || !skuField) return NextResponse.json({ error: "ClickUp is not configured." }, { status: 500 });
+  if (!token || !listId) return NextResponse.json({ error: "ClickUp is not configured." }, { status: 500 });
+
+  const ids = await fieldIds(token, listId, ["SKU / Barcode", "Stok", "Rak", "Brand"]);
+  if (!ids) return NextResponse.json({ error: "Could not reach ClickUp." }, { status: 502 });
+  const { "SKU / Barcode": skuField, Stok: stockField, Rak: rackField, Brand: brandField } = ids;
+  if (!skuField || !stockField || !rackField || !brandField) {
+    return NextResponse.json({ error: "Required product fields are missing in ClickUp." }, { status: 500 });
+  }
 
   let product: ClickUpTask | undefined;
   for (let page = 0; !product; page += 1) {
@@ -32,8 +39,8 @@ export async function GET(request: NextRequest) {
     id: product.id,
     name: product.name,
     sku,
-    currentStock: Number(valueOf(fields, process.env.FIELD_ID_STOK ?? "") ?? 0),
-    rak: String(valueOf(fields, process.env.FIELD_ID_RAK ?? "") ?? "-"),
-    brand: String(valueOf(fields, process.env.FIELD_ID_BRAND ?? "") ?? "-"),
+    currentStock: Number(valueOf(fields, stockField) ?? 0),
+    rak: String(valueOf(fields, rackField) ?? "-"),
+    brand: String(valueOf(fields, brandField) ?? "-"),
   });
 }
