@@ -1,69 +1,60 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+import { useEffect, useState } from "react";
+import { CloudOff, PackageSearch } from "lucide-react";
+import { Scanner } from "@/components/scanner";
+import { ProductSheet, type Product } from "@/components/product-sheet";
+import type { TransactionType } from "@/lib/stock";
+
+type Toast = { message: string; error?: boolean } | null;
+
+export default function ScannerPage() {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [online, setOnline] = useState(true);
+  const [scannerCycle, setScannerCycle] = useState(0);
+  const [toast, setToast] = useState<Toast>(null);
+  const restartScanner = () => { setProduct(null); setScannerCycle((value) => value + 1); };
+  const notify = (message: string, error = false) => {
+    setToast({ message, error });
+    window.setTimeout(() => setToast(null), 3500);
+  };
+
+  useEffect(() => {
+    const updateConnection = () => { setOnline(navigator.onLine); if (!navigator.onLine) notify("Koneksi terputus. Scanner menunggu internet.", true); };
+    updateConnection();
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    return () => { window.removeEventListener("online", updateConnection); window.removeEventListener("offline", updateConnection); };
+  }, []);
+
+  const findProduct = async (sku: string) => {
+    if (!navigator.onLine) { notify("Tidak ada koneksi internet.", true); restartScanner(); return; }
+    try {
+      const response = await fetch(`/api/product/search?sku=${encodeURIComponent(sku)}`);
+      const data = await response.json() as Product & { error?: string };
+      if (!response.ok) throw new Error(data.error);
+      setProduct(data);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Produk tidak dapat dicari.", true);
+      restartScanner();
+    }
+  };
+
+  const saveTransaction = async ({ type, qty, operator, notes }: { type: TransactionType; qty: number; operator: string; notes: string }) => {
+    if (!product) return;
+    const response = await fetch("/api/stock/transaction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ taskId: product.id, sku: product.sku, type, qty, operator, notes, currentStock: product.currentStock }) });
+    const data = await response.json() as { newStock?: number; error?: string };
+    if (!response.ok) { notify(data.error ?? "Transaksi gagal disimpan.", true); return; }
+    notify(`Stok berhasil diperbarui menjadi ${data.newStock}`);
+    restartScanner();
+  };
+
+  return <main className="mx-auto min-h-dvh max-w-lg p-4 pb-8">
+    <header className="mb-7 flex items-center gap-3 pt-3"><div className="rounded-2xl bg-emerald-500 p-3 text-slate-950"><PackageSearch className="size-7" /></div><div><h1 className="text-2xl font-black tracking-tight">Warehouse Scanner</h1><p className="text-sm text-slate-400">Scan • cek stok • simpan transaksi</p></div></header>
+    {!online && <div role="alert" className="mb-4 flex gap-2 rounded-xl border border-amber-700 bg-amber-950/60 p-3 text-sm text-amber-100"><CloudOff className="size-5 shrink-0" />Offline — sambungkan internet untuk mencari dan menyimpan data.</div>}
+    <Scanner key={scannerCycle} onDetected={findProduct} autoStart={scannerCycle > 0} disabled={!online} />
+    <p className="mt-5 text-center text-xs text-slate-500">Arahkan kamera ke barcode produk. Kamera otomatis berhenti setelah kode terbaca.</p>
+    {product && <ProductSheet product={product} onClose={restartScanner} onSubmit={saveTransaction} />}
+    {toast && <div role="status" className={`fixed bottom-5 left-4 right-4 z-30 mx-auto max-w-md rounded-xl p-4 text-center font-semibold shadow-2xl ${toast.error ? "bg-rose-600 text-white" : "bg-emerald-500 text-slate-950"}`}>{toast.message}</div>}
+  </main>;
 }
