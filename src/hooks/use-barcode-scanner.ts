@@ -34,9 +34,13 @@ export function useBarcodeScanner(elementId: string, onDetected: (value: string)
     if (!instance) return;
     try {
       if (instance.isScanning) await instance.stop();
-      await instance.clear();
     } catch {
       // The stream may already be closed by the device.
+    }
+    try {
+      await instance.clear();
+    } catch {
+      // The scanner may already have removed its video element.
     }
   }, []);
 

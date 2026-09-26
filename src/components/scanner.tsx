@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 type Props = { onDetected: (sku: string) => void; autoStart?: boolean; disabled?: boolean };
 
 export function Scanner({ onDetected, autoStart = false, disabled = false }: Props) {
-  const { start, toggleTorch, isScanning, hasTorch, torchOn, error } = useBarcodeScanner("barcode-reader", onDetected);
-  useEffect(() => { if (autoStart && !disabled) void start(); }, [autoStart, disabled, start]);
+  const { start, stop, toggleTorch, isScanning, hasTorch, torchOn, error } = useBarcodeScanner("barcode-reader", onDetected);
+  useEffect(() => {
+    if (disabled) { void stop(); return; }
+    if (autoStart) void start();
+  }, [autoStart, disabled, start, stop]);
 
   return (
     <section className="rounded-3xl border border-border bg-card p-4 text-card-foreground shadow-2xl">
