@@ -12,16 +12,16 @@ export function Scanner({ onDetected, autoStart = false, disabled = false }: Pro
   useEffect(() => { if (autoStart && !disabled) void start(); }, [autoStart, disabled, start]);
 
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-2xl">
+    <section className="rounded-3xl border border-border bg-card p-4 text-card-foreground shadow-2xl">
       <div className="mb-3 flex items-center justify-between">
-        <div><p className="text-sm font-semibold text-emerald-400">SCANNER AKTIF</p><h2 className="text-xl font-bold">Scan barcode barang</h2></div>
-        <ScanBarcode className="size-7 text-slate-400" aria-hidden="true" />
+        <div><p className="text-sm font-semibold text-chart-2">SCANNER AKTIF</p><h2 className="text-xl font-bold">Scan barcode barang</h2></div>
+        <ScanBarcode className="size-7 text-muted-foreground" aria-hidden="true" />
       </div>
-      <div className="relative min-h-64 overflow-hidden rounded-2xl bg-slate-950">
+      <div className="relative min-h-64 overflow-hidden rounded-2xl bg-muted">
         <div id="barcode-reader" className="min-h-64" />
-        {!isScanning && <div className="absolute inset-0 grid place-items-center text-center text-slate-400"><Camera className="mx-auto mb-2 size-10" /><span>Siap untuk membuka kamera</span></div>}
+        {!isScanning && <div className="absolute inset-0 grid place-items-center text-center text-muted-foreground"><Camera className="mx-auto mb-2 size-10" /><span>Siap untuk membuka kamera</span></div>}
       </div>
-      {error && <p role="alert" className="mt-3 rounded-xl bg-rose-950/60 p-3 text-sm text-rose-200">{error}</p>}
+      {error && <p role="alert" className="mt-3 rounded-xl bg-destructive p-3 text-sm text-destructive-foreground">{error}</p>}
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Button onClick={() => void start()} disabled={disabled || isScanning} className="text-base"><Camera className="mr-2 inline size-5" />{isScanning ? "Kamera aktif" : "Buka scanner"}</Button>
         <Button variant="secondary" onClick={() => void toggleTorch()} disabled={!isScanning || !hasTorch} aria-label="Toggle flashlight">

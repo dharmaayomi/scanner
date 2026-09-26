@@ -7,6 +7,7 @@ import { ProductSheet, type Product } from "@/components/product-sheet";
 import type { TransactionType } from "@/lib/stock";
 
 type Toast = { message: string; error?: boolean } | null;
+const previewProduct: Product = { id: "preview", name: "Produk Contoh", sku: "1234567890123", currentStock: 24, rak: "A-03", brand: "Demo Brand" };
 
 export default function ScannerPage() {
   const [product, setProduct] = useState<Product | null>(null);
@@ -50,11 +51,12 @@ export default function ScannerPage() {
   };
 
   return <main className="mx-auto min-h-dvh max-w-lg p-4 pb-8">
-    <header className="mb-7 flex items-center gap-3 pt-3"><div className="rounded-2xl bg-emerald-500 p-3 text-slate-950"><PackageSearch className="size-7" /></div><div><h1 className="text-2xl font-black tracking-tight">Warehouse Scanner</h1><p className="text-sm text-slate-400">Scan • cek stok • simpan transaksi</p></div></header>
-    {!online && <div role="alert" className="mb-4 flex gap-2 rounded-xl border border-amber-700 bg-amber-950/60 p-3 text-sm text-amber-100"><CloudOff className="size-5 shrink-0" />Offline — sambungkan internet untuk mencari dan menyimpan data.</div>}
-    <Scanner key={scannerCycle} onDetected={findProduct} autoStart={scannerCycle > 0} disabled={!online} />
-    <p className="mt-5 text-center text-xs text-slate-500">Arahkan kamera ke barcode produk. Kamera otomatis berhenti setelah kode terbaca.</p>
+    <header className="mb-7 flex items-center gap-3 pt-3"><div className="rounded-2xl bg-primary p-3 text-primary-foreground"><PackageSearch className="size-7" /></div><div><h1 className="text-2xl font-black tracking-tight">Warehouse Scanner</h1><p className="text-sm text-muted-foreground">Scan • cek stok • simpan transaksi</p></div></header>
+    {!online && <div role="alert" className="mb-4 flex gap-2 rounded-xl border border-destructive bg-destructive/10 p-3 text-sm text-destructive"><CloudOff className="size-5 shrink-0" />Offline — sambungkan internet untuk mencari dan menyimpan data.</div>}
+    <Scanner key={scannerCycle} onDetected={findProduct} autoStart={scannerCycle > 0} disabled={!online || Boolean(product)} />
+    <p className="mt-5 text-center text-xs text-muted-foreground">Arahkan kamera ke barcode produk. Kamera otomatis berhenti setelah kode terbaca.</p>
+    {process.env.NODE_ENV === "development" && <button className="mt-3 w-full text-center text-xs text-muted-foreground underline" onClick={() => setProduct(previewProduct)}>Preview hasil scan</button>}
     {product && <ProductSheet product={product} onClose={restartScanner} onSubmit={saveTransaction} />}
-    {toast && <div role="status" className={`fixed bottom-5 left-4 right-4 z-30 mx-auto max-w-md rounded-xl p-4 text-center font-semibold shadow-2xl ${toast.error ? "bg-rose-600 text-white" : "bg-emerald-500 text-slate-950"}`}>{toast.message}</div>}
+    {toast && <div role="status" className={`fixed bottom-5 left-4 right-4 z-30 mx-auto max-w-md rounded-xl p-4 text-center font-semibold shadow-2xl ${toast.error ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>{toast.message}</div>}
   </main>;
 }
