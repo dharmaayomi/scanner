@@ -22,7 +22,6 @@ export function Scanner({
 		toggleTorch,
 		refocus,
 		isScanning,
-		hasTorch,
 		torchOn,
 		error,
 	} = useBarcodeScanner("barcode-reader", onDetected);
@@ -78,7 +77,7 @@ export function Scanner({
 				<Button
 					variant="secondary"
 					onClick={() => void toggleTorch()}
-					disabled={!isScanning || !hasTorch}
+					disabled={!isScanning}
 					aria-label="Toggle flashlight"
 				>
 					{torchOn ? (

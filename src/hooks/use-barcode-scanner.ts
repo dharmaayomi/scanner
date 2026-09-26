@@ -26,7 +26,6 @@ export function useBarcodeScanner(
 	const locked = useRef(false);
 	const onDetectedRef = useRef(onDetected);
 	const [isScanning, setIsScanning] = useState(false);
-	const [hasTorch, setHasTorch] = useState(false);
 	const [torchOn, setTorchOn] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	onDetectedRef.current = onDetected;
@@ -35,7 +34,6 @@ export function useBarcodeScanner(
 		const instance = scanner.current;
 		scanner.current = null;
 		setIsScanning(false);
-		setHasTorch(false);
 		setTorchOn(false);
 		if (!instance) return;
 		try {
@@ -94,7 +92,6 @@ export function useBarcodeScanner(
 					// The camera can advertise autofocus without allowing control.
 				}
 			}
-			setHasTorch(Boolean(capabilities.torch));
 			setIsScanning(true);
 		} catch {
 			scanner.current = null;
@@ -105,7 +102,7 @@ export function useBarcodeScanner(
 	}, [elementId, stop]);
 
 	const toggleTorch = useCallback(async () => {
-		if (!scanner.current || !hasTorch) return;
+		if (!scanner.current) return;
 		try {
 			await scanner.current.applyVideoConstraints({
 				advanced: [{ torch: !torchOn }],
@@ -114,7 +111,7 @@ export function useBarcodeScanner(
 		} catch {
 			setError("This camera does not support its torch.");
 		}
-	}, [hasTorch, torchOn]);
+	}, [torchOn]);
 
 	const refocus = useCallback(async () => {
 		const instance = scanner.current;
@@ -146,5 +143,5 @@ export function useBarcodeScanner(
 		},
 		[stop],
 	);
-	return { start, stop, toggleTorch, refocus, isScanning, hasTorch, torchOn, error };
+	return { start, stop, toggleTorch, refocus, isScanning, torchOn, error };
 }

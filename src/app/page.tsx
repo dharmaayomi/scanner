@@ -106,12 +106,8 @@ export default function ScannerPage() {
 		<main className="mx-auto min-h-dvh max-w-lg p-4 pb-8">
 			<header className="mb-7  pt-3">
 				<div className="flex items-center gap-3">
-					<div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-foreground shadow-lg shadow-foreground/20">
-						<img
-							src="/icon.svg"
-							alt=""
-							className="size-9 brightness-0 invert"
-						/>
+					<div className="size-14 shrink-0 overflow-hidden">
+						<img src="/icon.svg" alt="" className="size-full scale-[1.2]" />
 					</div>
 					<div>
 						<p className="text-xs font-bold tracking-[0.1em] text-muted-foreground uppercase">
