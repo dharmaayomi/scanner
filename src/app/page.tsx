@@ -2,35 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { CloudOff } from "lucide-react";
+import Link from "next/link";
 import { Scanner } from "@/components/scanner";
 import { NewProductSheet } from "@/components/new-product-sheet";
 import { ProductSheet, type Product } from "@/components/product-sheet";
+import { toast } from "sonner";
 import type { TransactionType } from "@/lib/stock";
-
-type Toast = { message: string; error?: boolean } | null;
-const previewProduct: Product = {
-	id: "preview",
-	name: "Produk Contoh",
-	sku: "1234567890123",
-	currentStock: 24,
-	rak: "A-03",
-	brand: "Demo Brand",
-};
 
 export default function ScannerPage() {
 	const [product, setProduct] = useState<Product | null>(null);
 	const [missingSku, setMissingSku] = useState<string | null>(null);
 	const [online, setOnline] = useState(true);
 	const [scannerCycle, setScannerCycle] = useState(0);
-	const [toast, setToast] = useState<Toast>(null);
 	const restartScanner = () => {
 		setProduct(null);
 		setMissingSku(null);
 		setScannerCycle((value) => value + 1);
 	};
 	const notify = (message: string, error = false) => {
-		setToast({ message, error });
-		window.setTimeout(() => setToast(null), 3500);
+		if (error) toast.error("Terjadi kesalahan", { description: message });
+		else toast.success("Berhasil", { description: message });
 	};
 
 	useEffect(() => {
@@ -114,7 +105,7 @@ export default function ScannerPage() {
 	return (
 		<main className="mx-auto min-h-dvh max-w-lg p-4 pb-8">
 			<header className="mb-7 flex items-center gap-3 pt-3">
-				<img src="/icon.svg" alt="Scannow" className="size-14 shrink-0" />
+				<img src="/icon.svg" alt="scannow" className="size-14 shrink-0" />
 				<div>
 					<h1 className="text-2xl font-black tracking-tight">Scannow</h1>
 					<p className="text-sm text-muted-foreground">
@@ -141,12 +132,12 @@ export default function ScannerPage() {
 				terbaca.
 			</p>
 			{process.env.NODE_ENV === "development" && (
-				<button
+				<Link
+					href="/preview"
 					className="mt-3 w-full text-center text-xs text-muted-foreground underline"
-					onClick={() => setProduct(previewProduct)}
 				>
 					Preview hasil scan
-				</button>
+				</Link>
 			)}
 			{product && (
 				<ProductSheet
@@ -164,14 +155,6 @@ export default function ScannerPage() {
 						setProduct(createdProduct);
 					}}
 				/>
-			)}
-			{toast && (
-				<div
-					role="status"
-					className={`fixed bottom-5 left-4 right-4 z-30 mx-auto max-w-md rounded-xl p-4 text-center font-semibold shadow-2xl ${toast.error ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
-				>
-					{toast.message}
-				</div>
 			)}
 		</main>
 	);

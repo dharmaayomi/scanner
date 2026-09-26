@@ -7,6 +7,11 @@ type Payload = {
   operator?: string; notes?: string; currentStock?: number;
 };
 const logFieldNames = ["Tipe Transaksi", "Jumlah (Qty)"] as const;
+const clickUpError = async (response: Response) => {
+  const body = await response.json().catch(() => null) as { err?: unknown; ECODE?: unknown } | null;
+  if (typeof body?.err !== "string") return `ClickUp request failed (${response.status}).`;
+  return `${body.err}${typeof body.ECODE === "string" ? ` (${body.ECODE})` : ""}`;
+};
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as Payload;
@@ -61,7 +66,11 @@ export async function POST(request: NextRequest) {
   ]);
 
   if (!logResponse.ok || !stockResponse.ok) {
-    return NextResponse.json({ error: "ClickUp could not save the transaction." }, { status: 502 });
+    const errors = await Promise.all([
+      logResponse.ok ? null : clickUpError(logResponse),
+      stockResponse.ok ? null : clickUpError(stockResponse),
+    ]);
+    return NextResponse.json({ error: errors.filter(Boolean).join(" ") }, { status: logResponse.ok ? stockResponse.status : logResponse.status });
   }
   return NextResponse.json({ success: true, newStock });
 }

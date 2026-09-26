@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type Props = { onDetected: (sku: string) => void; autoStart?: boolean; disabled?: boolean };
 
 export function Scanner({ onDetected, autoStart = false, disabled = false }: Props) {
-  const { start, stop, toggleTorch, isScanning, hasTorch, torchOn, error } = useBarcodeScanner("barcode-reader", onDetected);
+  const { start, stop, toggleTorch, refocus, isScanning, hasTorch, torchOn, error } = useBarcodeScanner("barcode-reader", onDetected);
   useEffect(() => {
     if (disabled) { void stop(); return; }
     if (autoStart) void start();
@@ -20,7 +20,7 @@ export function Scanner({ onDetected, autoStart = false, disabled = false }: Pro
         <div><p className="text-sm font-semibold text-chart-2">SCANNER AKTIF</p><h2 className="text-xl font-bold">Scan barcode barang</h2></div>
         <ScanBarcode className="size-7 text-muted-foreground" aria-hidden="true" />
       </div>
-      <div className="relative min-h-64 overflow-hidden rounded-2xl bg-muted">
+      <div className="relative min-h-64 cursor-pointer overflow-hidden rounded-2xl bg-muted" onPointerDown={() => void refocus()}>
         <div id="barcode-reader" className="min-h-64" />
         {!isScanning && <div className="absolute inset-0 grid place-items-center text-center text-muted-foreground"><Camera className="mx-auto mb-2 size-10" /><span>Siap untuk membuka kamera</span></div>}
       </div>

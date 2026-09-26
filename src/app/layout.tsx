@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 const jakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta-sans" });
@@ -29,7 +30,7 @@ export default function RootLayout({
 				jakartaSans.variable,
 			)}
 		>
-			<body>{children}</body>
+			<body>{children}<Toaster position="top-center" /></body>
 		</html>
 	);
 }
