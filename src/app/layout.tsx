@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const jakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta-sans" });
 
 export const metadata: Metadata = {
 	title: "Warehouse Scanner",
@@ -25,7 +23,11 @@ export default function RootLayout({
 	return (
 		<html
 			lang="en"
-			className={cn("dark", outfit.variable, "font-sans", inter.variable)}
+			className={cn(
+				"light",
+				"font-sans",
+				jakartaSans.variable,
+			)}
 		>
 			<body>{children}</body>
 		</html>
